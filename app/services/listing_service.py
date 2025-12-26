@@ -23,7 +23,7 @@ class ListingService:
             self._collection = self.db.collection('listings')
         return self._collection
 
-    def get_listings(self, category: str = None, type: str = None, city: str = None, district: str = None, owner_id: str = None):
+    def get_listings(self, category: str = None, type: str = None, city: str = None, district: str = None, owner_id: str = None, search_text: str = None):
         query = self.collection
         if owner_id:
             query = query.where(filter=firestore.FieldFilter("owner_id", "==", owner_id))
@@ -36,9 +36,19 @@ class ListingService:
         if district:
             query = query.where(filter=firestore.FieldFilter("location.district", "==", district))
         
-        # Limit for demo, in real world we need pagination
-        docs = query.limit(50).stream()
-        return [doc.to_dict() for doc in docs]
+        # If searching, we fetch a bit more to ensure we find matches
+        limit = 1000 if search_text else 50
+        docs = query.limit(limit).stream()
+        results = [doc.to_dict() for doc in docs]
+        
+        if search_text:
+            st = search_text.lower()
+            results = [
+                item for item in results 
+                if st in item.get('title', '').lower() or st in item.get('description', '').lower()
+            ]
+            
+        return results
 
     def get_listings_by_location(self, city: str, limit: int = 50):
         query = self.collection.where(filter=firestore.FieldFilter("location.city", "==", city))

@@ -13,8 +13,9 @@ def get_listings(
     type: Optional[str] = None,
     city: Optional[str] = None,
     district: Optional[str] = None,
+    q: Optional[str] = Query(None, description="Search term for title or description"),
 ):
-    return listing_service.get_listings(category, type, city, district)
+    return listing_service.get_listings(category, type, city, district, search_text=q)
 
 @router.get("/suggested", response_model=List[ListingResponse])
 def get_suggested_listings(current_user: dict = Depends(get_current_user)):
