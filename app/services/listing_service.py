@@ -23,8 +23,10 @@ class ListingService:
             self._collection = self.db.collection('listings')
         return self._collection
 
-    def get_listings(self, category: str = None, type: str = None, city: str = None, district: str = None):
+    def get_listings(self, category: str = None, type: str = None, city: str = None, district: str = None, owner_id: str = None):
         query = self.collection
+        if owner_id:
+            query = query.where(filter=firestore.FieldFilter("owner_id", "==", owner_id))
         if category:
             query = query.where(filter=firestore.FieldFilter("category", "==", category))
         if type:

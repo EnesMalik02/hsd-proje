@@ -42,6 +42,13 @@ def get_suggested_listings(current_user: dict = Depends(get_current_user)):
         
     return listing_service.get_random_listings()
 
+@router.get("/me", response_model=List[ListingResponse])
+def get_my_listings(current_user: dict = Depends(get_current_user)):
+    """
+    Get listings created by the current user.
+    """
+    return listing_service.get_listings(owner_id=current_user['uid'])
+
 @router.post("/", response_model=ListingResponse)
 def create_listing(listing: ListingCreate, current_user: dict = Depends(get_current_user)):
     try:
@@ -58,6 +65,19 @@ def get_listing(listing_id: str, current_user: dict = Depends(get_current_user))
 
 @router.put("/{listing_id}", response_model=ListingResponse)
 def update_listing(listing_id: str, listing_in: ListingUpdate, current_user: dict = Depends(get_current_user)):
+    try:
+        updated = listing_service.update_listing(listing_id, listing_in, current_user['uid'])
+        if not updated:
+            raise HTTPException(status_code=404, detail="Listing not found")
+        return updated
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Not authorized to update this listing")
+
+@router.patch("/{listing_id}", response_model=ListingResponse)
+def patch_listing(listing_id: str, listing_in: ListingUpdate, current_user: dict = Depends(get_current_user)):
+    """
+    Partially update a listing.
+    """
     try:
         updated = listing_service.update_listing(listing_id, listing_in, current_user['uid'])
         if not updated:
