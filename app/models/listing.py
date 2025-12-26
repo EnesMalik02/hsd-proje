@@ -16,7 +16,9 @@ class ListingBase(BaseModel):
     type: str # "donation", "sale", "support"
     price: float = 0.0
     currency: str = "TRY"
+    currency: str = "TRY"
     location: Location
+    phone_number: Optional[str] = None
     status: str = "active" # "active", "reserved", "completed", "archived"
 
 class ListingCreate(ListingBase):
@@ -34,7 +36,9 @@ class ListingUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     images: Optional[List[str]] = None
+    images: Optional[List[str]] = None
     price: Optional[float] = None
+    phone_number: Optional[str] = None
     status: Optional[str] = None
 
     @field_validator('images')
