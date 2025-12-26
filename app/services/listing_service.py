@@ -7,8 +7,20 @@ import uuid
 
 class ListingService:
     def __init__(self):
-        self.db = get_db()
-        self.collection = self.db.collection('listings')
+        self._db = None
+        self._collection = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = get_db()
+        return self._db
+
+    @property
+    def collection(self):
+        if self._collection is None:
+            self._collection = self.db.collection('listings')
+        return self._collection
 
     def get_listings(self, category: str = None, type: str = None):
         query = self.collection

@@ -6,8 +6,20 @@ import uuid
 
 class ChatService:
     def __init__(self):
-        self.db = get_db()
-        self.collection = self.db.collection('chats')
+        self._db = None
+        self._collection = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = get_db()
+        return self._db
+
+    @property
+    def collection(self):
+        if self._collection is None:
+            self._collection = self.db.collection('chats')
+        return self._collection
 
     def create_chat(self, request_data: dict):
         # ID format: listingID_buyerID

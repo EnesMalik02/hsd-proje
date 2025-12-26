@@ -10,8 +10,20 @@ import uuid
 
 class RequestService:
     def __init__(self):
-        self.db = get_db()
-        self.collection = self.db.collection('requests')
+        self._db = None
+        self._collection = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = get_db()
+        return self._db
+
+    @property
+    def collection(self):
+        if self._collection is None:
+            self._collection = self.db.collection('requests')
+        return self._collection
 
     def create_request(self, request_in: RequestCreate, requester_uid: str):
         # 1. Get requester info

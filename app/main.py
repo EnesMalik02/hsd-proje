@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings, init_firebase
-from app.routers import users, listings, requests, chats, notifications
+from app.routers import users, listings, requests, chats, notifications, auth
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -25,6 +25,7 @@ def startup_event():
     init_firebase()
 
 # Include Routers
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(listings.router, prefix="/listings", tags=["Listings"])
 app.include_router(requests.router, prefix="/requests", tags=["Requests"])
