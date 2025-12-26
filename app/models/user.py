@@ -11,6 +11,7 @@ class UserStats(BaseModel):
 class UserBase(BaseModel):
     email: EmailStr
     display_name: str
+    username: str
     photo_url: Optional[str] = None
     role: str = "standard" # "standard", "student", "ngo", "admin"
     bio: Optional[str] = None
@@ -23,6 +24,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
+    username: Optional[str] = None
     photo_url: Optional[str] = None
     bio: Optional[str] = None
     fcm_token: Optional[str] = None
