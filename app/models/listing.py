@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Literal
 from datetime import datetime
 
@@ -20,7 +20,15 @@ class ListingBase(BaseModel):
     status: str = "active" # "active", "reserved", "completed", "archived"
 
 class ListingCreate(ListingBase):
-    pass
+    @field_validator('images')
+    @classmethod
+    def validate_images(cls, v):
+        if not v:
+            return v
+        for img in v:
+            if not img.startswith('data:image/'):
+                raise ValueError('Images must be Base64 encoded data URIs starting with "data:image/"')
+        return v
 
 class ListingUpdate(BaseModel):
     title: Optional[str] = None
@@ -28,6 +36,16 @@ class ListingUpdate(BaseModel):
     images: Optional[List[str]] = None
     price: Optional[float] = None
     status: Optional[str] = None
+
+    @field_validator('images')
+    @classmethod
+    def validate_images(cls, v):
+        if not v:
+            return v
+        for img in v:
+            if not img.startswith('data:image/'):
+                raise ValueError('Images must be Base64 encoded data URIs starting with "data:image/"')
+        return v
 
 class ListingResponse(ListingBase):
     id: str
