@@ -22,7 +22,12 @@ class ChatListResponse(BaseModel):
     id: str
     participants: List[str]
     listing_id: str
+    listing_title: Optional[str] = None
+    listing_image: Optional[str] = None
     status: str
     last_message: Optional[str] = None
     last_message_time: Optional[datetime] = None
     unread_count: Dict[str, int] = {}
+
+class ChatStart(BaseModel):
+    listing_id: str

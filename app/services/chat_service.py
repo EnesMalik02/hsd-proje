@@ -21,12 +21,17 @@ class ChatService:
             self._collection = self.db.collection('chats')
         return self._collection
 
-    def create_chat(self, request_data: dict):
+    def create_chat(self, request_data: dict = None, listing_id: str = None, requester_id: str = None, seller_id: str = None):
+        # Support flexible arguments for both Request flow and Direct Start flow
+        if request_data:
+            listing_id = request_data['listing_id']
+            requester_id = request_data['requester_id']
+            seller_id = request_data['seller_id']
+            
+        if not (listing_id and requester_id and seller_id):
+            raise ValueError("Missing chat parameters")
+
         # ID format: listingID_buyerID
-        listing_id = request_data['listing_id']
-        requester_id = request_data['requester_id']
-        seller_id = request_data['seller_id']
-        
         chat_id = f"{listing_id}_{requester_id}"
         
         doc_ref = self.collection.document(chat_id)
@@ -48,11 +53,45 @@ class ChatService:
         doc_ref.set(chat_data)
         return chat_data
 
+    def start_chat(self, listing_id: str, requester_uid: str):
+        # 1. Get listing to find owner
+        from app.services.listing_service import listing_service
+        listing = listing_service.get_listing(listing_id)
+        if not listing:
+            raise ValueError("Listing not found")
+            
+        owner_id = listing['owner_id']
+        if owner_id == requester_uid:
+             # If owner tries to start chat, maybe check if they have chats ON this listing?
+             # For now, let's assume "Start Chat" is mainly for buyers.
+             # If owner clicks on their own listing, they should probably see list of chats.
+             # But if they really want to create a chat with themselves? Probably block.
+             raise ValueError("Cannot chat with yourself")
+
+        return self.create_chat(listing_id=listing_id, requester_id=requester_uid, seller_id=owner_id)
+
     def get_chats(self, uid: str):
         # Query where participants array contains uid
         query = self.collection.where(filter=firestore.FieldFilter("participants", "array_contains", uid))
         docs = query.stream()
-        return [doc.to_dict() for doc in docs]
+        
+        chat_list = []
+        from app.services.listing_service import listing_service
+        
+        for doc in docs:
+            data = doc.to_dict()
+            listing_id = data.get('listing_id')
+            if listing_id:
+                listing = listing_service.get_listing(listing_id)
+                if listing:
+                    data['listing_title'] = listing.get('title')
+                    # Get first image if available
+                    images = listing.get('images', [])
+                    data['listing_image'] = images[0] if images else None
+            
+            chat_list.append(data)
+            
+        return chat_list
 
     def get_messages(self, chat_id: str, uid: str):
         # Verify participation
@@ -72,8 +111,17 @@ class ChatService:
             chat_ref.update({"unread_count": unread_map})
 
         # Get messages subcollection
-        msgs = chat_ref.collection('messages').order_by('created_at').stream()
-        return [{**m.to_dict(), "id": m.id} for m in msgs]
+        # Get messages subcollection
+        # We want the LAST 100 messages.
+        # So we order by created_at DESCENDING, limit 100, then reverse.
+        msgs = chat_ref.collection('messages').order_by('created_at', direction=firestore.Query.DESCENDING).limit(100).stream()
+        
+        # Convert to list
+        results = [{**m.to_dict(), "id": m.id} for m in msgs]
+        
+        # Reverse to return in chronological order (oldest first)
+        results.reverse()
+        return results
 
     def send_message(self, chat_id: str, message: MessageCreate, sender_id: str):
         chat_ref = self.collection.document(chat_id)
