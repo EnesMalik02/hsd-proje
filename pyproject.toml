@@ -1,0 +1,14 @@
+[project]
+name = "hsd-proje"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.127.1",
+    "firebase-admin>=7.1.0",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "python-multipart>=0.0.21",
+    "uvicorn>=0.40.0",
+]
