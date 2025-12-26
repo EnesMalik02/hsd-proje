@@ -53,7 +53,7 @@ class WalrusService:
             Dict containing blob_id and other metadata, or None if failed
         """
         try:
-            url = f"{self.publisher_url}/v1/store"
+            url = f"{self.publisher_url}/v1/blobs"
             params = {"epochs": self.epochs}
             headers = {"Content-Type": content_type}
             
@@ -103,6 +103,9 @@ class WalrusService:
                     return None
             else:
                 logger.error(f"Walrus store failed: {response.status_code} - {response.text}")
+                # Log full response for debugging
+                logger.error(f"Request URL: {url}")
+                logger.error(f"Request params: {params}")
                 return None
                 
         except httpx.TimeoutException:
