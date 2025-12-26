@@ -23,6 +23,8 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     init_firebase()
+    from app.core.config import init_walrus
+    init_walrus()
 
 # Include Routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])

@@ -20,6 +20,12 @@ class Settings:
     FIREBASE_TOKEN_URI = os.getenv("FIREBASE_TOKEN_URI")
     FIREBASE_AUTH_PROVIDER_CERT_URL = os.getenv("FIREBASE_AUTH_PROVIDER_CERT_URL")
     FIREBASE_CLIENT_CERT_URL = os.getenv("FIREBASE_CLIENT_CERT_URL")
+    
+    # Walrus Blockchain Configuration
+    WALRUS_ENABLED = os.getenv("WALRUS_ENABLED", "false").lower() == "true"
+    WALRUS_PUBLISHER_URL = os.getenv("WALRUS_PUBLISHER_URL", "https://publisher.walrus-testnet.walrus.space")
+    WALRUS_AGGREGATOR_URL = os.getenv("WALRUS_AGGREGATOR_URL", "https://aggregator.walrus-testnet.walrus.space")
+    WALRUS_EPOCHS = int(os.getenv("WALRUS_EPOCHS", "5"))
 
 settings = Settings()
 
@@ -61,6 +67,23 @@ def init_firebase():
 
     except Exception as e:
         print(f"Error initializing Firebase: {e}")
+
+def init_walrus():
+    """Initialize Walrus blockchain service if enabled."""
+    from app.services.walrus_service import init_walrus_service
+    
+    if settings.WALRUS_ENABLED:
+        try:
+            init_walrus_service(
+                publisher_url=settings.WALRUS_PUBLISHER_URL,
+                aggregator_url=settings.WALRUS_AGGREGATOR_URL,
+                epochs=settings.WALRUS_EPOCHS
+            )
+            print(f"Walrus service initialized successfully (Testnet)")
+        except Exception as e:
+            print(f"Error initializing Walrus: {e}")
+    else:
+        print("Walrus service is disabled")
 
 def get_db():
     return firestore.client()
