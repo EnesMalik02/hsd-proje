@@ -73,7 +73,29 @@ class ChatService:
 
         # Get messages subcollection
         msgs = chat_ref.collection('messages').order_by('created_at').stream()
-        return [{**m.to_dict(), "id": m.id} for m in msgs]
+        messages = [{**m.to_dict(), "id": m.id} for m in msgs]
+        
+        # Try to fetch content from Walrus if available
+        from app.core.config import settings
+        from app.services.walrus_service import get_walrus_service
+        
+        if settings.WALRUS_ENABLED:
+            walrus = get_walrus_service()
+            if walrus:
+                for msg in messages:
+                    blob_id = msg.get('walrus_blob_id')
+                    if blob_id:
+                        try:
+                            # Read text from Walrus blockchain
+                            walrus_text = walrus.read_text(blob_id)
+                            if walrus_text:
+                                msg['text'] = walrus_text
+                                msg['_walrus_verified'] = True
+                        except Exception as e:
+                            print(f"Failed to read from Walrus {blob_id}: {e}")
+                            # Fallback to Firestore text
+        
+        return messages
 
     def send_message(self, chat_id: str, message: MessageCreate, sender_id: str):
         chat_ref = self.collection.document(chat_id)
@@ -85,11 +107,31 @@ class ChatService:
         if sender_id not in participants:
             raise PermissionError("Not a participant")
             
-        # Create message in subcollection
+        # Create message data
         msg_data = message.model_dump()
         msg_data['sender_id'] = sender_id
         msg_data['created_at'] = datetime.utcnow()
+        msg_data['storage_type'] = 'firestore'  # Default
+        msg_data['walrus_blob_id'] = None
         
+        # Try to store on Walrus blockchain if enabled
+        from app.core.config import settings
+        from app.services.walrus_service import get_walrus_service
+        
+        if settings.WALRUS_ENABLED and message.text:
+            walrus = get_walrus_service()
+            if walrus:
+                try:
+                    # Store message text on Walrus blockchain
+                    blob_result = walrus.store_text(message.text)
+                    if blob_result and blob_result.get('blob_id'):
+                        msg_data['walrus_blob_id'] = blob_result['blob_id']
+                        msg_data['storage_type'] = 'hybrid'  # Stored in both Firestore and Walrus
+                        print(f"Message stored on Walrus: {blob_result['blob_id']}")
+                except Exception as e:
+                    print(f"Failed to store on Walrus, using Firestore only: {e}")
+        
+        # Save to Firestore
         msg_ref = chat_ref.collection('messages').document()
         msg_ref.set(msg_data)
         

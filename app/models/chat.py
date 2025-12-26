@@ -14,6 +14,9 @@ class MessageResponse(MessageBase):
     id: str
     sender_id: str
     created_at: Optional[datetime] = None
+    # Walrus blockchain fields
+    walrus_blob_id: Optional[str] = None
+    storage_type: str = "firestore"  # "firestore", "walrus", or "hybrid"
 
     class Config:
         from_attributes = True
