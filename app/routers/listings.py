@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from app.models.listing import ListingResponse, ListingCreate, ListingUpdate
 from app.services.listing_service import listing_service
+from app.services.user_service import user_service
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -13,6 +14,32 @@ def get_listings(
     current_user: dict = Depends(get_current_user) # Optional: if we want public access, remove Depends
 ):
     return listing_service.get_listings(category, type)
+
+@router.get("/suggested", response_model=List[ListingResponse])
+def get_suggested_listings(current_user: dict = Depends(get_current_user)):
+    """
+    Get suggested listings for the current user.
+    If user has location info, return listings from their city.
+    Otherwise, return random listings.
+    """
+    uid = current_user['uid']
+    user = user_service.get_user(uid)
+    
+    if user and user.get('location') and user['location'].get('city'):
+        # User has location, suggest based on city
+        city = user['location']['city']
+        listings = listing_service.get_listings_by_location(city)
+        if listings:
+            return listings
+        # If no listings in city, fall back to random?
+        # For now let's just return empty or maybe fall back. 
+        # Requirement says "if location entered -> according to location; if not -> random".
+        # It implies if location is there, we try location. 
+        # But if location yields 0 results, random might be better than empty.
+        # I'll stick to strict interpretation first: if location -> location results.
+        return listings
+        
+    return listing_service.get_random_listings()
 
 @router.post("/", response_model=ListingResponse)
 def create_listing(listing: ListingCreate, current_user: dict = Depends(get_current_user)):

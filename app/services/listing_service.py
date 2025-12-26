@@ -4,6 +4,7 @@ from app.models.listing import ListingCreate, ListingUpdate
 from app.services.user_service import user_service
 from datetime import datetime
 import uuid
+import random
 
 class ListingService:
     def __init__(self):
@@ -32,6 +33,23 @@ class ListingService:
         # Limit for demo, in real world we need pagination
         docs = query.limit(50).stream()
         return [doc.to_dict() for doc in docs]
+
+    def get_listings_by_location(self, city: str, limit: int = 50):
+        query = self.collection.where(filter=firestore.FieldFilter("location.city", "==", city))
+        docs = query.limit(limit).stream()
+        return [doc.to_dict() for doc in docs]
+
+    def get_random_listings(self, limit: int = 50):
+        # Fetch a larger pool of recent listings (e.g. 100) and sample from them
+        # Note: This is a simple implementation. For large datasets, use a better approach.
+        query = self.collection.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100)
+        docs = query.stream()
+        all_listings = [doc.to_dict() for doc in docs]
+        
+        if len(all_listings) <= limit:
+            return all_listings
+        
+        return random.sample(all_listings, limit)
 
     def get_listing(self, listing_id: str):
         doc = self.collection.document(listing_id).get()

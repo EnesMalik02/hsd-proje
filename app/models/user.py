@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime
+from app.models.listing import Location
 
 class UserStats(BaseModel):
     carbon_saved: float = 0.0
@@ -15,6 +16,7 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
     fcm_token: Optional[str] = None
     verification_doc: Optional[str] = None
+    location: Optional[Location] = None
 
 class UserCreate(UserBase):
     uid: str
@@ -25,6 +27,7 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
     fcm_token: Optional[str] = None
     verification_doc: Optional[str] = None
+    location: Optional[Location] = None
 
 class UserResponse(UserBase):
     uid: str
