@@ -23,12 +23,16 @@ class ListingService:
             self._collection = self.db.collection('listings')
         return self._collection
 
-    def get_listings(self, category: str = None, type: str = None):
+    def get_listings(self, category: str = None, type: str = None, city: str = None, district: str = None):
         query = self.collection
         if category:
             query = query.where(filter=firestore.FieldFilter("category", "==", category))
         if type:
             query = query.where(filter=firestore.FieldFilter("type", "==", type))
+        if city:
+            query = query.where(filter=firestore.FieldFilter("location.city", "==", city))
+        if district:
+            query = query.where(filter=firestore.FieldFilter("location.district", "==", district))
         
         # Limit for demo, in real world we need pagination
         docs = query.limit(50).stream()

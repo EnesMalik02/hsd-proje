@@ -11,9 +11,10 @@ router = APIRouter()
 def get_listings(
     category: Optional[str] = None, 
     type: Optional[str] = None,
-    current_user: dict = Depends(get_current_user) # Optional: if we want public access, remove Depends
+    city: Optional[str] = None,
+    district: Optional[str] = None,
 ):
-    return listing_service.get_listings(category, type)
+    return listing_service.get_listings(category, type, city, district)
 
 @router.get("/suggested", response_model=List[ListingResponse])
 def get_suggested_listings(current_user: dict = Depends(get_current_user)):
