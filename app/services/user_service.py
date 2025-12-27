@@ -47,4 +47,33 @@ class UserService:
         
         return self.get_user(uid)
 
+    def toggle_favorite(self, uid: str, listing_id: str):
+        fav_ref = self.collection.document(uid).collection('favorites').document(listing_id)
+        doc = fav_ref.get()
+        
+        if doc.exists:
+            fav_ref.delete()
+            return False # Unliked
+        else:
+            fav_ref.set({
+                "listing_id": listing_id,
+                "created_at": datetime.utcnow()
+            })
+            return True # Liked
+
+    def get_favorites(self, uid: str):
+        fav_ref = self.collection.document(uid).collection('favorites').order_by('created_at', direction='DESCENDING')
+        docs = fav_ref.stream()
+        
+        favorites = []
+        from app.services.listing_service import listing_service
+        
+        for doc in docs:
+            data = doc.to_dict()
+            listing = listing_service.get_listing(data['listing_id'])
+            if listing:
+                favorites.append(listing)
+                
+        return favorites
+
 user_service = UserService()

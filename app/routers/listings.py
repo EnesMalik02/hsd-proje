@@ -57,6 +57,13 @@ def create_listing(listing: ListingCreate, current_user: dict = Depends(get_curr
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/favorites", response_model=List[ListingResponse])
+def get_my_favorites(current_user: dict = Depends(get_current_user)):
+    """
+    Get listings liked by the current user.
+    """
+    return user_service.get_favorites(current_user['uid'])
+
 @router.get("/{listing_id}", response_model=ListingResponse)
 def get_listing(listing_id: str, current_user: dict = Depends(get_current_user)):
     listing = listing_service.get_listing(listing_id)
@@ -86,3 +93,12 @@ def patch_listing(listing_id: str, listing_in: ListingUpdate, current_user: dict
         return updated
     except PermissionError:
         raise HTTPException(status_code=403, detail="Not authorized to update this listing")
+
+@router.post("/{listing_id}/favorite")
+def toggle_favorite(listing_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Toggle favorite status (Like/Unlike).
+    Returns {"is_favorite": boolean}.
+    """
+    is_fav = user_service.toggle_favorite(current_user['uid'], listing_id)
+    return {"is_favorite": is_fav}
